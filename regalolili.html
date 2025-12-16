@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para ti ❤️</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            overflow-x: hidden;
+        }
+        .handwritten {
+            font-family: 'Great Vibes', cursive;
+        }
+        
+        /* Animaciones personalizadas */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .gift-pop {
+            animation: popOut 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0;
+            transform: scale(0) translateY(50px);
+        }
+
+        @keyframes popOut {
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-3deg); }
+            75% { transform: rotate(3deg); }
+        }
+
+        .box-shake:hover {
+            animation: shake 0.5s ease-in-out infinite;
+            cursor: pointer;
+        }
+
+        /* Scrollbar para el panel de configuración */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f9a8d4; 
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-pink-50 min-h-screen relative text-gray-800 transition-colors duration-500" id="main-body">
+
+    <!-- Fondo decorativo (corazones flotantes generados por JS) -->
+    <div id="background-effects" class="absolute inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+    <!-- Botón de Configuración (Esquina Superior Derecha) -->
+    <button onclick="toggleSettings()" class="absolute top-4 right-4 z-50 bg-white/80 backdrop-blur p-2 rounded-full shadow-lg hover:bg-white text-pink-500 transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+
+    <!-- Contenedor Principal -->
+    <main class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+        
+        <!-- Título -->
+        <h1 id="main-title" class="text-4xl md:text-6xl handwritten text-pink-600 mb-8 text-center drop-shadow-sm animate-float">
+            ¡Feliz Navidad, mi amor!
+        </h1>
+
+        <!-- Escenario de la Caja -->
+        <div class="relative w-full max-w-lg h-96 flex items-center justify-center">
+            
+            <!-- Caja Cerrada -->
+            <div id="box-closed-container" class="transition-all duration-700 absolute inset-0 flex items-center justify-center z-20">
+                <div class="box-shake relative group cursor-pointer" onclick="openBox()">
+                    <!-- Imagen de la caja cerrada (SVG por defecto) -->
+                    <img id="img-box-closed" src="https://api.iconify.design/noto:wrapped-gift.svg?height=250" alt="Regalo" class="w-64 h-64 md:w-80 md:h-80 object-contain filter drop-shadow-xl transition-transform transform group-hover:scale-105">
+                    <p class="absolute -bottom-8 w-full text-center text-pink-500 font-bold animate-pulse">Haz clic para abrir</p>
+                </div>
+            </div>
+
+            <!-- Caja Abierta y Regalos (Oculto inicialmente) -->
+            <div id="box-opened-container" class="hidden absolute inset-0 flex flex-col items-center justify-end z-10 h-full w-full">
+                
+                <!-- Contenedor donde flotarán los regalos -->
+                <div id="gifts-container" class="absolute bottom-32 left-0 right-0 flex justify-center items-end h-64 pointer-events-none">
+                    <!-- Los regalos se inyectan aquí con JS -->
+                </div>
+
+                <!-- Imagen Caja Abierta -->
+                <img id="img-box-opened" src="https://api.iconify.design/noto:open-mailbox-with-lowered-flag.svg?height=200" alt="Caja Abierta" class="w-64 h-auto object-contain filter drop-shadow-2xl z-20 translate-y-10">
+            </div>
+        </div>
+
+        <p id="instruction-text" class="hidden mt-12 text-gray-500 text-lg bg-white/50 px-4 py-2 rounded-full">
+            ✨ Haz clic en cada regalito para ver qué es ✨
+        </p>
+
+    </main>
+
+    <!-- Modal de Detalle del Regalo -->
+    <div id="gift-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl transform scale-95 transition-transform duration-300 relative overflow-hidden">
+            <!-- Botón cerrar -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-pink-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <!-- Contenido Modal -->
+            <div class="flex flex-col items-center text-center">
+                <div class="w-full h-56 bg-pink-50 rounded-2xl mb-4 overflow-hidden flex items-center justify-center">
+                    <img id="modal-img" src="" class="w-full h-full object-cover" alt="Regalo detalle">
+                </div>
+                <h3 id="modal-title" class="text-2xl font-bold text-pink-600 mb-2 handwritten"></h3>
+                <p id="modal-desc" class="text-gray-600 leading-relaxed"></p>
+                <button onclick="closeModal()" class="mt-6 bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-full transition-colors font-semibold shadow-lg shadow-pink-200">
+                    ¡Me encanta! ❤️
+                </button>
+            </div>
+            
+            <!-- Decoración modal -->
+            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-pink-100 rounded-full opacity-50 z-[-1]"></div>
+            <div class="absolute -top-10 -left-10 w-24 h-24 bg-yellow-100 rounded-full opacity-50 z-[-1]"></div>
+        </div>
+    </div>
+
+    <!-- PANEL DE CONFIGURACIÓN (Oculto) -->
+    <div id="settings-panel" class="fixed inset-y-0 right-0 w-full md:w-96 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-[60] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 class="text-xl font-bold text-gray-800">⚙️ Personalizar Regalo</h2>
+                <button onclick="toggleSettings()" class="text-gray-500 hover:text-red-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Configuración General -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Título Principal</label>
+                    <input type="text" id="input-title" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-pink-300 outline-none" placeholder="Ej: Feliz Navidad Amor">
+                </div>
+
+                <!-- Imágenes de la Caja -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-3">📦 La Caja</h3>
+                    
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Imagen Caja Cerrada</label>
+                    <input type="file" accept="image/*" onchange="handleImageUpload(this, 'img-box-closed')" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 mb-2"/>
+                    
+                    <label class="block text-xs font-medium text-gray-500 mb-1 mt-3">Imagen Caja Abierta</label>
+                    <input type="file" accept="image/*" onchange="handleImageUpload(this, 'img-box-opened')" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"/>
+                </div>
+
+                <!-- Lista de Regalos -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-semibold text-gray-700">🎁 Regalos Interiores</h3>
+                        <button onclick="addNewGiftInput()" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200">+ Añadir</button>
+                    </div>
+                    <div id="gifts-list-editor" class="space-y-4">
+                        <!-- Aquí se generan los inputs de los regalos -->
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t mt-6 flex flex-col gap-2">
+                    <button onclick="saveConfig()" class="w-full bg-pink-600 text-white py-3 rounded-lg font-bold hover:bg-pink-700 transition shadow-lg">
+                        Guardar Cambios
+                    </button>
+                    <button onclick="resetToDefault()" class="w-full bg-gray-200 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-300 transition">
+                        Restablecer Original
+                    </button>
+                </div>
+                
+                <p class="text-xs text-center text-gray-400 mt-2">
+                    Nota: Las imágenes se guardan en este navegador. Si cambias de dispositivo, tendrás que subirlas de nuevo.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN POR DEFECTO ---
+        const defaultConfig = {
+            title: "¡Feliz Navidad, mi amor!",
+            // Usamos SVGs y emojis grandes para asegurar que funcione sin internet o archivos externos
+            boxClosedImg: "https://api.iconify.design/emojione:wrapped-gift.svg",
+            boxOpenImg: "https://api.iconify.design/noto:card-index-dividers.svg", // Un contenedor genérico o caja
+            gifts: [
+                {
+                    id: 1,
+                    title: "Crema Hidratante",
+                    desc: "Para que tengas la piel siempre suavecita como me gusta. ¡Te quiero!",
+                    img: "https://api.iconify.design/noto:lotion-bottle.svg"
+                },
+                {
+                    id: 2,
+                    title: "Bombas de Baño",
+                    desc: "Para que te relajes y tengas un momento solo para ti, mi reina.",
+                    img: "https://api.iconify.design/noto:person-taking-bath-light-skin-tone.svg"
+                },
+                {
+                    id: 3,
+                    title: "Perfume Especial",
+                    desc: "Ese aroma que me vuelve loco cada vez que te acercas.",
+                    img: "https://api.iconify.design/noto:perfume.svg"
+                }
+            ]
+        };
+
+        // Estado actual de la aplicación
+        let appData = { ...defaultConfig };
+        let isBoxOpen = false;
+
+        // --- INICIALIZACIÓN ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            renderApp();
+            createFloatingHearts();
+        });
+
+        // Cargar configuración de LocalStorage
+        function loadConfig() {
+            const saved = localStorage.getItem('giftBoxConfig');
+            if (saved) {
+                try {
+                    appData = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Error cargando configuración", e);
+                }
+            }
+        }
+
+        // Renderizar la vista principal
+        function renderApp() {
+            document.getElementById('main-title').innerText = appData.title;
+            document.getElementById('input-title').value = appData.title;
+            
+            // Imagen Caja Cerrada
+            const boxClosedEl = document.getElementById('img-box-closed');
+            if (boxClosedEl) boxClosedEl.src = appData.boxClosedImg;
+
+            // Imagen Caja Abierta
+            const boxOpenEl = document.getElementById('img-box-opened');
+            if (boxOpenEl) boxOpenEl.src = appData.boxOpenImg;
+
+            // Renderizar Editor de Regalos
+            renderGiftEditor();
+        }
+
+        // --- LÓGICA DE INTERACCIÓN ---
+
+        function openBox() {
+            if (isBoxOpen) return;
+            isBoxOpen = true;
+
+            const boxClosedContainer = document.getElementById('box-closed-container');
+            const boxOpenedContainer = document.getElementById('box-opened-container');
+            const instructionText = document.getElementById('instruction-text');
+
+            // 1. Desaparecer caja cerrada
+            boxClosedContainer.style.opacity = '0';
+            boxClosedContainer.style.pointerEvents = 'none';
+
+            // 2. Efecto Confeti
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ec4899', '#f472b6', '#fbcfe8', '#ffffff'] // Tonos rosa
+            });
+
+            setTimeout(() => {
+                boxClosedContainer.classList.add('hidden');
+                boxOpenedContainer.classList.remove('hidden');
+                
+                // Mostrar texto de instrucción
+                instructionText.classList.remove('hidden');
+                instructionText.classList.add('animate-pulse');
+
+                // 3. Renderizar y animar regalos saliendo
+                renderFloatingGifts();
+            }, 500);
+        }
+
+        function renderFloatingGifts() {
+            const container = document.getElementById('gifts-container');
+            container.innerHTML = '';
+
+            appData.gifts.forEach((gift, index) => {
+                // Crear elemento del regalo
+                const giftEl = document.createElement('div');
+                giftEl.className = 'absolute cursor-pointer gift-pop hover:scale-110 transition-transform duration-300';
+                
+                // Calcular posición dispersa (en arco)
+                const total = appData.gifts.length;
+                const angle = (index / (total - 1 || 1)) * 100 - 50; // De -50 a 50 grados aprox
+                const yOffset = Math.abs(angle) * 0.5; // Arco
+                
+                // Estilos dinámicos
+                giftEl.style.left = `calc(50% + ${angle * 1.5}px)`; // Espaciado horizontal
+                giftEl.style.bottom = `${yOffset + 20}px`;
+                giftEl.style.zIndex = 30 + index;
+                giftEl.style.animationDelay = `${index * 0.2}s`;
+                // Permitir clics
+                giftEl.style.pointerEvents = 'auto'; 
+                giftEl.style.transform = `translateX(-50%)`; // Centrar el elemento en su punto
+
+                giftEl.innerHTML = `
+                    <div class="relative group" onclick="showGiftDetail(${index})">
+                        <div class="w-20 h-20 md:w-28 md:h-28 bg-white rounded-full shadow-lg flex items-center justify-center p-2 border-4 border-pink-100 transform transition-transform group-hover:-translate-y-2">
+                            <img src="${gift.img}" class="w-full h-full object-contain rounded-full" alt="${gift.title}">
+                        </div>
+                        <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded text-xs font-bold text-pink-500 opacity-0 group-hover:opacity-100 transition-opacity shadow whitespace-nowrap">
+                            ${gift.title}
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(giftEl);
+            });
+        }
+
+        // --- MODAL DETALLE ---
+        const modal = document.getElementById('gift-modal');
+        const modalContent = modal.querySelector('div');
+
+        function showGiftDetail(index) {
+            const gift = appData.gifts[index];
+            document.getElementById('modal-img').src = gift.img;
+            document.getElementById('modal-title').innerText = gift.title;
+            document.getElementById('modal-desc').innerText = gift.desc;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            // Pequeño delay para permitir transición CSS
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+
+            // Confeti pequeño al abrir regalo individual
+            confetti({
+                particleCount: 30,
+                spread: 50,
+                origin: { y: 0.5 },
+                colors: ['#ffe4e6'] 
+            });
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        // --- PANEL DE CONFIGURACIÓN ---
+
+        function toggleSettings() {
+            const panel = document.getElementById('settings-panel');
+            const isClosed = panel.classList.contains('translate-x-full');
+            if (isClosed) {
+                panel.classList.remove('translate-x-full');
+            } else {
+                panel.classList.add('translate-x-full');
+            }
+        }
+
+        function renderGiftEditor() {
+            const list = document.getElementById('gifts-list-editor');
+            list.innerHTML = '';
+
+            appData.gifts.forEach((gift, index) => {
+                const item = document.createElement('div');
+                item.className = 'bg-white p-3 border rounded-lg shadow-sm relative';
+                item.innerHTML = `
+                    <button onclick="removeGift(${index})" class="absolute top-2 right-2 text-red-400 hover:text-red-600">✕</button>
+                    <div class="flex items-center gap-3 mb-2">
+                        <img src="${gift.img}" class="w-10 h-10 rounded object-cover bg-gray-100 border">
+                        <input type="file" accept="image/*" onchange="handleGiftImage(this, ${index})" class="text-xs text-gray-500 w-full file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-pink-50 file:text-pink-700">
+                    </div>
+                    <input type="text" value="${gift.title}" oninput="updateGiftData(${index}, 'title', this.value)" class="w-full text-sm border-b mb-2 focus:border-pink-300 outline-none font-bold text-gray-700" placeholder="Título">
+                    <textarea oninput="updateGiftData(${index}, 'desc', this.value)" class="w-full text-sm border p-1 rounded focus:ring-1 focus:ring-pink-300 outline-none text-gray-600" rows="2" placeholder="Descripción">${gift.desc}</textarea>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function addNewGiftInput() {
+            appData.gifts.push({
+                id: Date.now(),
+                title: "Nuevo Regalo",
+                desc: "Descripción bonita aquí...",
+                img: "https://api.iconify.design/noto:wrapped-gift.svg"
+            });
+            renderGiftEditor();
+        }
+
+        function removeGift(index) {
+            if(confirm('¿Borrar este regalo?')) {
+                appData.gifts.splice(index, 1);
+                renderGiftEditor();
+            }
+        }
+
+        function updateGiftData(index, field, value) {
+            appData.gifts[index][field] = value;
+        }
+
+        // --- MANEJO DE IMÁGENES (File Reader) ---
+        
+        // Comprime imágenes básicas para que quepan en LocalStorage
+        function handleImageUpload(input, targetImgId) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Actualizar imagen en vivo
+                const imgEl = document.getElementById(targetImgId);
+                if(imgEl) imgEl.src = e.target.result;
+
+                // Guardar en config temporal
+                if(targetImgId === 'img-box-closed') appData.boxClosedImg = e.target.result;
+                if(targetImgId === 'img-box-opened') appData.boxOpenImg = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleGiftImage(input, index) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                appData.gifts[index].img = e.target.result;
+                renderGiftEditor(); // Re-render para mostrar miniatura
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- GUARDADO ---
+
+        function saveConfig() {
+            // Actualizar título
+            appData.title = document.getElementById('input-title').value;
+            
+            try {
+                localStorage.setItem('giftBoxConfig', JSON.stringify(appData));
+                alert('¡Configuración guardada! La página se recargará para aplicar todo.');
+                location.reload();
+            } catch (e) {
+                alert('La imagen es demasiado grande para guardarse en el navegador. Intenta con imágenes más pequeñas o usa capturas de pantalla.');
+                console.error(e);
+            }
+        }
+
+        function resetToDefault() {
+            if(confirm('¿Borrar toda tu personalización y volver al inicio?')) {
+                localStorage.removeItem('giftBoxConfig');
+                location.reload();
+            }
+        }
+
+        // --- EFECTOS DE FONDO ---
+        function createFloatingHearts() {
+            const container = document.getElementById('background-effects');
+            const colors = ['#fce7f3', '#fbcfe8', '#f9a8d4']; // Rosas pastel
+
+            for(let i=0; i<20; i++) {
+                const heart = document.createElement('div');
+                heart.innerHTML = '❤';
+                heart.className = 'absolute text-2xl md:text-4xl opacity-30 animate-float';
+                heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.top = Math.random() * 100 + '%';
+                heart.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                heart.style.animationDelay = (Math.random() * 2) + 's';
+                container.appendChild(heart);
+            }
+        }
+
+    </script>
+</body>
+</html>
